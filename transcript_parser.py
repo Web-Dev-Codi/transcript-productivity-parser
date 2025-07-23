@@ -140,14 +140,53 @@ class TranscriptParser:
         
         return 'Unknown'
     
+    def _normalize_todo_text(self, todo_text: str) -> str:
+        """Normalize todo text for deduplication by removing common prefixes and suffixes."""
+        # Remove common prefixes like "I will", "be", etc.
+        todo_text = re.sub(r'^(I\s+will\s+|be\s+|to\s+|responsible\s+for\s+)', '', todo_text, flags=re.IGNORECASE).strip()
+        # Remove trailing punctuation and whitespace
+        todo_text = re.sub(r'[.!?]+$', '', todo_text).strip()
+        # Remove extra whitespace
+        todo_text = re.sub(r'\s+', ' ', todo_text)
+        return todo_text.lower()
+    
+    def _is_similar_todo(self, new_todo: str, existing_todos: List[str], threshold: float = 0.5) -> bool:
+        """Check if a new todo is similar to any existing todos using word overlap."""
+        # Normalize both todos for better comparison
+        new_normalized = self._normalize_todo_text(new_todo)
+        new_words = set(new_normalized.split())
+        if len(new_words) == 0:
+            return False
+            
+        for existing_todo in existing_todos:
+            existing_normalized = self._normalize_todo_text(existing_todo)
+            existing_words = set(existing_normalized.split())
+            if len(existing_words) == 0:
+                continue
+                
+            # Calculate Jaccard similarity (intersection over union)
+            intersection = new_words.intersection(existing_words)
+            union = new_words.union(existing_words)
+            
+            if len(union) > 0:
+                similarity = len(intersection) / len(union)
+                if similarity >= threshold:
+                    return True
+        return False
+    
     def extract_todos(self, captions: List[Dict]) -> List[Dict]:
         """Extract todos from parsed captions."""
         todos = []
+        todos_by_speaker_context = {}  # Group todos by (speaker, context) for similarity checking
         
         for caption in captions:
             text = caption['text']
             speaker = caption['speaker']
             timestamp = caption['timestamp']
+            
+            speaker_context_key = (speaker, text)
+            if speaker_context_key not in todos_by_speaker_context:
+                todos_by_speaker_context[speaker_context_key] = []
             
             # Check for todo keywords
             for keyword_pattern in self.todo_keywords:
@@ -162,14 +201,20 @@ class TranscriptParser:
                     if sentence_match:
                         todo_text = sentence_match.group(1).strip()
                         if todo_text and len(todo_text) > 3:  # Filter out very short matches
-                            todos.append({
-                                'timestamp': timestamp,
-                                'speaker': speaker,
-                                'keyword': match.group(0),
-                                'todo': todo_text,
-                                'assignee': self._extract_assignee(text),
-                                'context': text
-                            })
+                            # Check if this todo is similar to existing ones for same speaker/context
+                            existing_todos = [t['todo'] for t in todos_by_speaker_context[speaker_context_key]]
+                            
+                            if not self._is_similar_todo(todo_text, existing_todos):
+                                new_todo = {
+                                    'timestamp': timestamp,
+                                    'speaker': speaker,
+                                    'keyword': match.group(0),
+                                    'todo': todo_text,
+                                    'assignee': self._extract_assignee(text),
+                                    'context': text
+                                }
+                                todos.append(new_todo)
+                                todos_by_speaker_context[speaker_context_key].append(new_todo)
             
             # Check for assignment patterns
             for pattern in self.assignment_patterns:
@@ -185,14 +230,20 @@ class TranscriptParser:
                             todo_text = groups[2].strip()
                         
                         if todo_text and len(todo_text) > 3:
-                            todos.append({
-                                'timestamp': timestamp,
-                                'speaker': speaker,
-                                'keyword': 'assignment',
-                                'todo': todo_text,
-                                'assignee': assignee,
-                                'context': text
-                            })
+                            # Check if this todo is similar to existing ones for same speaker/context
+                            existing_todos = [t['todo'] for t in todos_by_speaker_context[speaker_context_key]]
+                            
+                            if not self._is_similar_todo(todo_text, existing_todos):
+                                new_todo = {
+                                    'timestamp': timestamp,
+                                    'speaker': speaker,
+                                    'keyword': 'assignment',
+                                    'todo': todo_text,
+                                    'assignee': assignee,
+                                    'context': text
+                                }
+                                todos.append(new_todo)
+                                todos_by_speaker_context[speaker_context_key].append(new_todo)
         
         return todos
     
