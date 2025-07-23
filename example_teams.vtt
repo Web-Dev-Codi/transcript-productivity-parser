@@ -1,0 +1,37 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:03.500
+John Doe: Welcome to our weekly team standup meeting.
+
+00:00:03.500 --> 00:00:08.200
+Sarah Wilson: Thanks John. I completed the user interface mockups yesterday.
+
+00:00:08.200 --> 00:00:12.800
+Mike Chen: Action item: I need to finish the API integration by Wednesday.
+
+00:00:12.800 --> 00:00:16.500
+Lisa Rodriguez: I will review the code changes and provide feedback.
+
+00:00:16.500 --> 00:00:21.300
+John Doe: Great progress everyone. Lisa should also test the new features.
+
+00:00:21.300 --> 00:00:25.100
+Sarah Wilson: Todo: Update the project timeline with current milestones.
+
+00:00:25.100 --> 00:00:29.800
+Mike Chen: I have to fix the performance issues in the search functionality.
+
+00:00:29.800 --> 00:00:33.500
+Lisa Rodriguez: We must schedule a client demo for next Friday.
+
+00:00:33.500 --> 00:00:37.200
+John Doe: Perfect. Sarah will coordinate with the client for the demo.
+
+00:00:37.200 --> 00:00:41.000
+Mike Chen: I'm going to work on the deployment scripts this week.
+
+00:00:41.000 --> 00:00:44.800
+Sarah Wilson: Action item: Prepare the demo presentation slides.
+
+00:00:44.800 --> 00:00:48.500
+John Doe: Excellent work everyone. See you next week.
